@@ -1,8 +1,4 @@
 # !/usr/bin/env python
-# import json
-# from datetime import datetime, timedelta
-# import time
-# import random
 from pv_simulator import pv_simulator
 from meter import meter
 
