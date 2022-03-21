@@ -1,27 +1,22 @@
-from datetime import datetime
-
-print ('Hello Git')
-#!/usr/bin/env python
-import pika
+# !/usr/bin/env python
 import json
+from datetime import datetime, timedelta
 import time
 import random
+from pv_simulator import pv_simulator
+from meter import meter
 
-x =  '{ "name":"John", "age":30, "city":"New York"}'
-y = json.loads(x)
-print(y["age"])
+meter = meter()
+pv_simulator = pv_simulator(meter.getChannel())
 
-msg={}
-
-
-while True:
-    now = datetime.now()
-    msg['ts']=now.strftime("%H%M%S")
-    msg['pwr']= str(random.randint(0,9000))
-    time.sleep(1)
-    print(json.dumps(msg, indent = None, separators=(",",":")))
+values = meter.createDayMeterValues() # Creates random power values for one day & writes it into an array as json expressions
+meter.writeDayMeterValues2Queue(values) # Writes it all into a RabbitMQ queue
+pv_simulator.processDayMeterValuesFromQueue() # Reads from that Queue and generates a simulated PV power value, adds this value to the meter value and output the result.
 
 
+
+
+exit(1)
 
 
 
@@ -29,13 +24,14 @@ while True:
 
 
 
-connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-channel = connection.channel()
-channel.queue_declare(queue='hello')
-
-
-
-i=0
+# dateinfo = pv_simulator.phase3min
+# while True:
+#     print(json.dumps(msg, indent = None, separators=(",",":")))
+#     pwr = pv_simulator.getPowerValue(dateinfo)
+#     print ("%s pwr: %03f" % (msg['ts'], pwr))
+#     dateinfo += timedelta(seconds=60 * 15)
+#     if (dateinfo > pv_simulator.phase4max): break
+#     time.sleep(1)
 
 
 
