@@ -13,6 +13,9 @@ Quick start
 main.py
 ~~~~~~~~~~~~~~
 
+connection to rabitMQ broker is initialized in meter.py
+assumes the broker is running on localhost, listening at port 5672
+
 .. code-block::
 
     values = meter.createDayMeterValues() # Creates random power values for one day & writes it into an array as json expressions
