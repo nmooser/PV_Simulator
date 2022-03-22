@@ -3,7 +3,6 @@ import random
 from datetime import datetime, timedelta
 import pika
 
-
 class meter():
     step = None
     connection = None

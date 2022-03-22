@@ -4,7 +4,6 @@ import csv
 import os
 from datetime import datetime
 
-
 class pv_simulator():
     channel = None
     connection = None
@@ -28,11 +27,26 @@ class pv_simulator():
         self.y3 = 0.15
         self.slope1 = 0.35 / ((8 - 6) * 60 * 60)
         self.slope4 = -0.15 / ((21 - 20) * 60 * 60)
-        if os.path.exists("messages.csv"): os.remove("messages.csv")
-        out=["timestamp", "pwr_meter/W", "pwr_pv/W", "pwr_meter+pv/W"]
-        with open('messages.csv', mode='a') as msg_file:
-            msg_writer = csv.writer(msg_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            msg_writer.writerow(out)
+        self.createNewOutfile()
+
+    def getPowerValue(self, dateInfo):
+        dateinfoSecs = self.getSecs(dateInfo)
+        if dateInfo >= self.phase1min and dateInfo <= self.phase1max:
+            return self.slope1 * (dateinfoSecs - self.getSecs(self.phase1min))
+        if dateInfo >= self.phase2min and dateInfo <= self.phase2max:
+            return self.fitSinCurve(self.x1, self.y1, self.x2, self.y2, dateinfoSecs)
+        if dateInfo >= self.phase3min and dateInfo <= self.phase3max:
+            return self.fitSinCurve(self.x2, self.y2, self.x3, self.y3, dateinfoSecs)
+        if dateInfo >= self.phase4min and dateInfo <= self.phase4max:
+            return self.slope4 * (dateinfoSecs - self.getSecs(self.phase4min)) + 0.15
+        return 0.0
+
+    def fitSinCurve(self, x1, y1, x2, y2, x):
+        a = (y1 - y2) / 2
+        b = math.pi / (x2 - x1)
+        c = math.pi * x2 / (x1 - x2) - math.pi / 2
+        d = (y1 + y2) / 2
+        return a * math.sin(b * x + c) + d
 
     def callback(self, ch, method, properties, body):
         if body.decode("utf-8") == 'stop':
@@ -67,21 +81,11 @@ class pv_simulator():
     def getSecs(self, dateinfo):
         return dateinfo.hour * 60 * 60 + dateinfo.minute * 60 + dateinfo.second
 
-    def getPowerValue(self, dateInfo):
-        dateinfoSecs = self.getSecs(dateInfo)
-        if dateInfo >= self.phase1min and dateInfo <= self.phase1max:
-            return self.slope1 * (dateinfoSecs - self.getSecs(self.phase1min))
-        if dateInfo >= self.phase2min and dateInfo <= self.phase2max:
-            return self.fitSinCurve(self.x1, self.y1, self.x2, self.y2, dateinfoSecs)
-        if dateInfo >= self.phase3min and dateInfo <= self.phase3max:
-            return self.fitSinCurve(self.x2, self.y2, self.x3, self.y3, dateinfoSecs)
-        if dateInfo >= self.phase4min and dateInfo <= self.phase4max:
-            return self.slope4 * (dateinfoSecs - self.getSecs(self.phase4min)) + 0.15
-        return 0.0
+    def createNewOutfile(self):
+        if os.path.exists("messages.csv"): os.remove("messages.csv")
+        out=["timestamp", "pwr_meter/W", "pwr_pv/W", "pwr_meter+pv/W"]
+        with open('messages.csv', mode='a') as msg_file:
+            msg_writer = csv.writer(msg_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            msg_writer.writerow(out)
 
-    def fitSinCurve(self, x1, y1, x2, y2, x):
-        a = (y1 - y2) / 2
-        b = math.pi / (x2 - x1)
-        c = math.pi * x2 / (x1 - x2) - math.pi / 2
-        d = (y1 + y2) / 2
-        return a * math.sin(b * x + c) + d
+
